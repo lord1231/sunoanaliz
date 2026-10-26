@@ -5,31 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1e1e2e">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%235b5bd6'/%3E%3Ccircle cx='50' cy='50' r='28' fill='%23fff'/%3E%3C/svg%3E">
-<title>Şarkı Analizi Ultra</title>
+<title>Şarkı Analizi Gemini</title>
 <style>
-  :root { color-scheme: light dark; --bg:#f5f5f7; --fg:#1d1d1f; --card:#fff; --accent:#5b5bd6; --muted:#777; }
+  :root { color-scheme: light dark; --bg:#f5f5f7; --fg:#1d1d1f; --card:#fff; --accent:#5b5bd6; --muted:#777; --warn:#b45309; }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#1e1e2e; --fg:#f0f0f5; --card:#2a2a3c; --accent:#8b8bff; --muted:#aaa; }
+    :root { --bg:#1e1e2e; --fg:#f0f0f5; --card:#2a2a3c; --accent:#8b8bff; --muted:#aaa; --warn:#fbbf24; }
   }
   * { box-sizing: border-box; }
-  body {
-    margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--fg);
-    padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
-  }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--fg);
+    padding:max(16px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom)); }
   h1 { font-size:1.3rem; margin:0 0 12px; }
   h2 { font-size:1rem; margin:0 0 8px; }
   .card { background:var(--card); border-radius:14px; padding:14px; margin-bottom:12px; }
   label { display:block; font-size:.88rem; margin:8px 0 4px; color:var(--muted); }
-  input[type=text], input[type=number], select, textarea {
+  input[type=text], input[type=number], input[type=password], select, textarea {
     width:100%; padding:10px; font-size:1rem; border-radius:8px;
-    border:1px solid #888; background:transparent; color:var(--fg); font-family:inherit;
-  }
+    border:1px solid #888; background:transparent; color:var(--fg); font-family:inherit; }
   textarea { min-height:90px; font-size:.95rem; line-height:1.4; }
   input[type=file] { width:100%; font-size:.95rem; }
-  button {
-    background:var(--accent); color:#fff; border:0; border-radius:10px;
-    padding:11px 14px; font-size:.95rem; margin:6px 6px 0 0;
-  }
+  button { background:var(--accent); color:#fff; border:0; border-radius:10px;
+    padding:11px 14px; font-size:.95rem; margin:6px 6px 0 0; }
   button.ghost { background:transparent; color:var(--accent); border:1px solid var(--accent); }
   button.sel { background:var(--accent); }
   button:disabled { opacity:.5; }
@@ -42,7 +37,13 @@
 </head>
 <body>
 
-<h1>Şarkı Analizi Ultra</h1>
+<h1>Şarkı Analizi Gemini</h1>
+
+<div class="card">
+  <label for="apiKey">Gemini API anahtarı (yalnızca bu telefonda saklanır)</label>
+  <input type="password" id="apiKey" placeholder="AIza...">
+  <div class="hint">Anahtar sadece bu tarayıcıda saklanır. Boş bırakırsanız yerel analiz kullanılır.</div>
+</div>
 
 <div class="card">
   <input type="file" id="file" accept="audio/*">
@@ -54,23 +55,9 @@
   <input type="text" id="country" placeholder="Örn. Türkiye">
   <label for="region">Yöre</label>
   <input type="text" id="region" placeholder="Örn. Karadeniz">
-  <label for="lang">Dil</label>
-  <select id="lang">
-    <option value="Türkçe">Türkçe</option>
-    <option value="İngilizce">İngilizce</option>
-    <option value="none">Yok (enstrümantal)</option>
-  </select>
-  <label for="vocal">Vokal</label>
-  <select id="vocal">
-    <option value="male vocal">Erkek vokal</option>
-    <option value="female vocal">Kadın vokal</option>
-    <option value="duet, male and female vocals">Düet</option>
-    <option value="choir">Koro</option>
-    <option value="instrumental">Enstrümantal</option>
-  </select>
-  <label for="genre">Tür (boş bırakılırsa otomatik)</label>
-  <input type="text" id="genre" placeholder="Örn. halk pop, arabesk, rock">
-  <label for="manualBpm">Tempo elle (boş bırakılırsa adaylardan seçilir)</label>
+  <label for="genre">Tür (boş bırakılırsa Gemini tahmin eder)</label>
+  <input type="text" id="genre" placeholder="Örn. halk pop, arabesk">
+  <label for="manualBpm">Tempo elle (boş bırakılırsa analiz sonucu kullanılır)</label>
   <input type="number" id="manualBpm" min="40" max="220" placeholder="Örn. 92">
   <button id="go">Analiz et</button>
   <progress id="bar" max="100" value="0" hidden></progress>
@@ -81,14 +68,13 @@
 <div class="card" id="tempoCard" hidden>
   <h2>Tempo adayları</h2>
   <div id="tempoBtns"></div>
-  <div class="hint">Tempo yarısı ya da iki katı olabilir. Kulağınızla kontrol edip gerekirse elle girin.</div>
+  <div id="tempoNote" class="hint"></div>
 </div>
 
 <div class="card" id="resultCard" hidden>
   <pre id="result"></pre>
   <h2>Suno stil prompt'u (düzenlenebilir)</h2>
   <textarea id="sunoBox"></textarea>
-  <div class="hint">Kontrollerden birini değiştirirseniz bu metin yeniden oluşur.</div>
   <button id="copy">Raporu kopyala</button>
   <button id="copyPrompt" class="ghost">Prompt'u kopyala</button>
   <button id="share" class="ghost">Paylaş</button>
@@ -105,87 +91,155 @@ const tick = () => new Promise(r => setTimeout(r, 30));
 const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const MAJOR = [6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
 const MINOR = [6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+const GEMINI_MODEL = "gemini-2.0-flash";
 
-let A = null;        // son analiz sonucu
-let selBpm = null;   // seçili otomatik tempo
+let A = null;
+let selBpm = null;
 
-// ---------- Ses çözme ----------
+// Anahtar yalnızca bu telefonun tarayıcısında saklanır
+$("apiKey").value = localStorage.getItem("geminiKey") || "";
+$("apiKey").addEventListener("change", () => {
+  localStorage.setItem("geminiKey", $("apiKey").value.trim());
+});
+
+// ---------- Ses çözme ve örnekleme düşürme (yerel analiz için) ----------
 async function decodeMono(file) {
   const buf = await file.arrayBuffer();
   const ac = new (window.AudioContext || window.webkitAudioContext)();
   const audio = await ac.decodeAudioData(buf);
-  const ch = audio.numberOfChannels, len = audio.length;
+  ac.close();
+  const ch = audio.numberOfChannels;
+  const d = Math.max(1, Math.floor(audio.sampleRate / 11025));
+  const sr = audio.sampleRate / d;
+  const len = Math.floor(audio.length / d);
   const mono = new Float32Array(len);
   for (let c = 0; c < ch; c++) {
-    const d = audio.getChannelData(c);
-    for (let i = 0; i < len; i++) mono[i] += d[i] / ch;
+    const data = audio.getChannelData(c);
+    for (let i = 0; i < len; i++) {
+      let s = 0; const base = i * d;
+      for (let k = 0; k < d; k++) s += data[base + k];
+      mono[i] += s / (d * ch);
+    }
   }
-  const sr = audio.sampleRate;
-  ac.close();
-  return { mono, sr };
+  return { mono, sr, durationSec: audio.duration };
 }
 
-// ---------- Tempo adayları (otokorelasyon, 60–200 BPM) ----------
-function tempoCandidates(x, sr) {
-  const hop = 512, win = 1024;
-  const frames = Math.floor((x.length - win) / hop);
-  const env = new Float32Array(frames);
-  let prev = 0;
-  for (let f = 0; f < frames; f++) {
-    let e = 0; const s = f * hop;
-    for (let i = 0; i < win; i++) e += x[s + i] * x[s + i];
-    e = Math.sqrt(e / win);
-    env[f] = Math.max(0, e - prev);
-    prev = e;
+// ---------- Yerel analiz (yedek) ----------
+function fft(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
   }
-  const fps = sr / hop;
-  const scores = {};
-  for (let bpm = 60; bpm <= 200; bpm++) {
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len;
+    const wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let j = 0; j < len / 2; j++) {
+        const a = i + j, b = a + len / 2;
+        const vr = re[b] * cr - im[b] * ci;
+        const vi = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - vr; im[b] = im[a] - vi;
+        re[a] += vr; im[a] += vi;
+        const t = cr * wr - ci * wi;
+        ci = cr * wi + ci * wr;
+        cr = t;
+      }
+    }
+  }
+}
+
+function hann(n) {
+  const w = new Float32Array(n);
+  for (let i = 0; i < n; i++) w[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1));
+  return w;
+}
+
+function onsetEnvelope(x, sr) {
+  const N = 1024, hop = 128;
+  const w = hann(N);
+  const frames = Math.floor((x.length - N) / hop);
+  const env = new Float32Array(Math.max(frames, 0));
+  let prevMag = new Float32Array(N / 2);
+  const re = new Float32Array(N), im = new Float32Array(N);
+  for (let f = 0; f < frames; f++) {
+    const s = f * hop;
+    for (let i = 0; i < N; i++) { re[i] = x[s + i] * w[i]; im[i] = 0; }
+    fft(re, im);
+    let flux = 0;
+    const mag = new Float32Array(N / 2);
+    for (let k = 0; k < N / 2; k++) {
+      mag[k] = Math.log(1 + 100 * Math.hypot(re[k], im[k]));
+      const diff = mag[k] - prevMag[k];
+      if (diff > 0) flux += diff;
+    }
+    env[f] = flux;
+    prevMag = mag;
+  }
+  return { env, fps: sr / hop };
+}
+
+function tempoCandidates(env, fps) {
+  const scores = new Map();
+  let mean = 0;
+  for (let i = 0; i < env.length; i++) mean += env[i];
+  mean /= Math.max(env.length, 1);
+  const e = new Float32Array(env.length);
+  for (let i = 0; i < env.length; i++) e[i] = env[i] - mean;
+  for (let bpm = 50; bpm <= 200; bpm++) {
     const lag = Math.round(60 * fps / bpm);
     let acc = 0, cnt = 0;
-    for (let i = 0; i + lag < frames; i++) { acc += env[i] * env[i + lag]; cnt++; }
-    scores[bpm] = cnt ? acc / cnt : 0;
+    for (let i = 0; i + lag < e.length; i++) { acc += e[i] * e[i + lag]; cnt++; }
+    const raw = cnt ? acc / cnt : 0;
+    const prior = Math.exp(-0.5 * Math.pow((bpm - 115) / 45, 2));
+    scores.set(bpm, raw * (0.85 + 0.15 * prior));
   }
-  // Yerel tepe noktaları
   const peaks = [];
-  for (let b = 61; b <= 199; b++) {
-    if (scores[b] > scores[b - 1] && scores[b] >= scores[b + 1]) peaks.push({ bpm: b, score: scores[b] });
+  for (let b = 51; b <= 199; b++) {
+    const v = scores.get(b);
+    if (v > scores.get(b - 1) && v >= scores.get(b + 1)) peaks.push({ bpm: b, score: v });
   }
   peaks.sort((a, b) => b.score - a.score);
-  const top = peaks.slice(0, 3);
-  const maxS = top.length ? top[0].score : 1;
-  return top.map(p => ({ bpm: p.bpm, pct: Math.round(100 * p.score / maxS) }));
+  const picked = [];
+  for (const p of peaks) {
+    if (picked.every(q => Math.abs(q.bpm - p.bpm) >= 4)) picked.push(p);
+    if (picked.length === 3) break;
+  }
+  if (!picked.length) return { cands: [{ bpm: 100, pct: 0 }], confidence: "düşük" };
+  const top = picked[0].score || 1;
+  const second = picked[1] ? picked[1].score : 0;
+  const ratio = second / top;
+  return {
+    cands: picked.map(p => ({ bpm: p.bpm, pct: Math.max(0, Math.round(100 * p.score / top)) })),
+    confidence: ratio < 0.6 ? "yüksek" : ratio < 0.85 ? "orta" : "düşük"
+  };
 }
 
-// ---------- Kromatik analiz (Goertzel) ----------
-function goertzel(x, start, n, freq, sr) {
-  const coeff = 2 * Math.cos(2 * Math.PI * freq / sr);
-  let s1 = 0, s2 = 0;
-  for (let i = 0; i < n; i++) {
-    const s = x[start + i] + coeff * s1 - s2;
-    s2 = s1; s1 = s;
+function chromaFrames(x, sr) {
+  const N = 4096, hop = 4096;
+  const w = hann(N);
+  const re = new Float32Array(N), im = new Float32Array(N);
+  const frames = [];
+  for (let s = 0; s + N <= x.length; s += hop) {
+    for (let i = 0; i < N; i++) { re[i] = x[s + i] * w[i]; im[i] = 0; }
+    fft(re, im);
+    const c = new Array(12).fill(0);
+    let energy = 0;
+    for (let k = 1; k < N / 2; k++) {
+      const f = k * sr / N;
+      if (f < 60 || f > 1000) continue;
+      const mag = Math.hypot(re[k], im[k]);
+      energy += mag * mag;
+      const midi = Math.round(69 + 12 * Math.log2(f / 440));
+      c[((midi % 12) + 12) % 12] += mag * mag;
+    }
+    const tot = c.reduce((a, b) => a + b, 0) || 1;
+    frames.push({ t: s / sr, c: c.map(v => v / tot), energy });
   }
-  return s1 * s1 + s2 * s2 - coeff * s1 * s2;
-}
-
-function frameChroma(x, start, n, sr) {
-  const c = new Array(12).fill(0);
-  for (let midi = 48; midi <= 83; midi++) {
-    const f = 440 * Math.pow(2, (midi - 69) / 12);
-    c[midi % 12] += Math.max(0, goertzel(x, start, n, f, sr));
-  }
-  const tot = c.reduce((a, b) => a + b, 0) || 1;
-  return c.map(v => v / tot);
-}
-
-function chromaFrames(x, sr, maxSec) {
-  const n = 4096, hop = 8192;
-  const end = Math.min(x.length, sr * maxSec);
-  const out = [];
-  for (let s = 0; s + n <= end; s += hop) {
-    out.push({ t: s / sr, c: frameChroma(x, s, n, sr) });
-  }
-  return out;
+  return frames;
 }
 
 function pearson(a, b) {
@@ -199,57 +253,25 @@ function pearson(a, b) {
   return (da === 0 || db === 0) ? 0 : num / Math.sqrt(da * db);
 }
 
-function estimateKey(sumChroma) {
-  let best = -2, tonic = 0, scale = "majör";
+function estimateKey(frames) {
+  const energies = frames.map(f => f.energy).sort((a, b) => a - b);
+  const thr = energies[Math.floor(energies.length * 0.2)] || 0;
+  const sum = new Array(12).fill(0);
+  frames.forEach(f => { if (f.energy >= thr) for (let i = 0; i < 12; i++) sum[i] += f.c[i]; });
+  const results = [];
   for (let t = 0; t < 12; t++) {
-    const rot = sumChroma.map((_, i) => sumChroma[(i + t) % 12]);
-    const cMaj = pearson(rot, MAJOR), cMin = pearson(rot, MINOR);
-    if (cMaj > best) { best = cMaj; tonic = t; scale = "majör"; }
-    if (cMin > best) { best = cMin; tonic = t; scale = "minör"; }
+    const rot = sum.map((_, i) => sum[(i + t) % 12]);
+    results.push({ tonic: NAMES[t], scale: "majör", r: pearson(rot, MAJOR) });
+    results.push({ tonic: NAMES[t], scale: "minör", r: pearson(rot, MINOR) });
   }
-  return { tonic: NAMES[tonic], scale };
+  results.sort((a, b) => b.r - a.r);
+  const margin = results[0].r - results[1].r;
+  return {
+    tonic: results[0].tonic, scale: results[0].scale,
+    confidence: margin > 0.12 ? "yüksek" : margin > 0.05 ? "orta" : "düşük"
+  };
 }
 
-// ---------- Akor tanıma (majör/minör üçlü şablonları) ----------
-function tpl(root, ints) {
-  const v = new Array(12).fill(0);
-  ints.forEach(i => v[(root + i) % 12] = 1);
-  return v;
-}
-const TEMPLATES = [];
-for (let r = 0; r < 12; r++) {
-  TEMPLATES.push({ name: NAMES[r], vec: tpl(r, [0, 4, 7]) });
-  TEMPLATES.push({ name: NAMES[r] + "m", vec: tpl(r, [0, 3, 7]) });
-}
-function cosSim(a, b) {
-  let d = 0, na = 0, nb = 0;
-  for (let i = 0; i < 12; i++) { d += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; }
-  return (na && nb) ? d / Math.sqrt(na * nb) : 0;
-}
-function chordFor(c) {
-  let best = -1, name = "N.C.";
-  for (const T of TEMPLATES) {
-    const s = cosSim(c, T.vec);
-    if (s > best) { best = s; name = T.name; }
-  }
-  return best > 0.6 ? name : "N.C.";
-}
-function chordTimeline(frames) {
-  const G = 10; // ~1.9 sn'lik gruplar
-  const out = [];
-  let last = null;
-  for (let g = 0; g < frames.length; g += G) {
-    const sum = new Array(12).fill(0);
-    for (let k = g; k < Math.min(g + G, frames.length); k++) {
-      for (let i = 0; i < 12; i++) sum[i] += frames[k].c[i];
-    }
-    const name = chordFor(sum);
-    if (name !== last) { out.push({ t: frames[g].t, name }); last = name; }
-  }
-  return out.filter(c => c.name !== "N.C.").slice(0, 24);
-}
-
-// ---------- Enerji ve ton rengi ----------
 function features(x) {
   let sq = 0, zc = 0;
   for (let i = 0; i < x.length; i++) {
@@ -259,46 +281,170 @@ function features(x) {
   return { rms: Math.sqrt(sq / x.length), zcr: zc / x.length };
 }
 
-// ---------- Prompt ve rapor ----------
-function autoGenre(bpm, minor) {
-  if (bpm < 85)  return minor ? "slow melancholic ballad" : "slow acoustic pop";
-  if (bpm < 115) return minor ? "mid-tempo folk-rock" : "upbeat pop";
-  if (bpm < 140) return "dance-pop / rock";
-  return "fast rock / electronic";
+async function localAnalyze(mono, sr, durationSec, step) {
+  step("Yerel analiz: vuruşlar ve tempo...", 40);
+  const { env, fps } = onsetEnvelope(mono, sr);
+  const tempo = tempoCandidates(env, fps);
+  await tick();
+  step("Yerel analiz: ton...", 70);
+  const frames = chromaFrames(mono, sr);
+  const key = estimateKey(frames);
+  await tick();
+  const { rms, zcr } = features(mono);
+  return {
+    source: "yerel",
+    durationSec: Math.round(durationSec),
+    cands: tempo.cands, tempoConf: tempo.confidence,
+    tonic: key.tonic, scale: key.scale, keyConf: key.confidence,
+    chords: [],
+    energy: rms > 0.15 ? "yüksek" : "düşük/orta",
+    brightness: zcr > 0.12 ? "parlak" : "koyu",
+    geminiNote: ""
+  };
 }
 
+// ---------- Gemini ile analiz ----------
+function toBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  const CH = 0x8000;
+  for (let i = 0; i < bytes.length; i += CH) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  }
+  return btoa(bin);
+}
+
+async function geminiAnalyze(file, key, step) {
+  step("Gemini'ye gönderiliyor...", 30);
+  const buf = await file.arrayBuffer();
+  if (buf.byteLength > 18 * 1024 * 1024) {
+    throw new Error("Dosya 18 MB'dan büyük. Gemini için daha küçük bir dosya kullanın.");
+  }
+  const mime = file.type || "audio/mpeg";
+  const prompt = `Bu şarkıyı dinle ve yalnızca geçerli bir JSON nesnesi döndür. Markdown, açıklama veya kod bloğu yazma.
+Alanlar:
+- tempo_bpm: sayı (60-200 arası, şarkının gerçek temposu; yarım ya da çift tempo olmadığından emin ol)
+- tempo_adaylari: en olası 3 tempo sayısı dizisi
+- tempo_guveni: "yüksek", "orta" veya "düşük"
+- tonik: nota adı (C, C#, D, ... B)
+- mod: "majör" veya "minör"
+- ton_guveni: "yüksek", "orta" veya "düşük"
+- akorlar: ilk 60 saniyedeki belirgin akorlar dizisi, [{"t": saniye, "name": "Am"}] biçiminde en fazla 12 öğe
+- tur: türü Türkçe veya İngilizce kısa bir ifadeyle (örn. "halk pop", "arabesk")
+- vokal: "erkek vokal", "kadın vokal", "düet", "koro" veya "enstrümantal"
+- dil: "Türkçe", "İngilizce", "diğer" veya "yok"
+- enstruman: en fazla 5 enstrüman adı dizisi
+- ruh_hali: kısa bir ifade
+- emin_degil: duyduğun ama kesin olmadığın konuların kısa listesi
+Emin olmadığın alanlarda düşük güven yaz, tahmin uydurma.`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+  const body = {
+    contents: [{
+      parts: [
+        { text: prompt },
+        { inline_data: { mime_type: mime, data: toBase64(buf) } }
+      ]
+    }],
+    generationConfig: { temperature: 0.2, responseMimeType: "application/json" }
+  };
+
+  step("Gemini analiz ediyor...", 60);
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Gemini hatası ${res.status}: ${t.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
+  const clean = text.replace(/```json|```/g, "").trim();
+  const j = JSON.parse(clean);
+
+  const cands = (j.tempo_adaylari || [j.tempo_bpm]).filter(Boolean).slice(0, 3)
+    .map((b, i) => ({ bpm: Math.round(b), pct: i === 0 ? 100 : 0 }));
+  if (!cands.length) cands.push({ bpm: Math.round(j.tempo_bpm || 100), pct: 100 });
+  if (j.tempo_bpm) {
+    const tb = Math.round(j.tempo_bpm);
+    if (!cands.find(c => c.bpm === tb)) cands.unshift({ bpm: tb, pct: 100 });
+  }
+
+  return {
+    source: "gemini",
+    durationSec: 0,
+    cands,
+    tempoConf: j.tempo_guveni || "düşük",
+    tonic: j.tonik || "C",
+    scale: j.mod === "minör" ? "minör" : "majör",
+    keyConf: j.ton_guveni || "düşük",
+    chords: (j.akorlar || []).map(c => ({ t: Number(c.t) || 0, name: String(c.name) })),
+    energy: "Gemini tahmini",
+    brightness: "Gemini tahmini",
+    geminiNote: {
+      tur: j.tur, vokal: j.vokal, dil: j.dil,
+      enstruman: Array.isArray(j.enstruman) ? j.enstruman.join(", ") : j.enstruman,
+      ruhHali: j.ruh_hali,
+      emin: Array.isArray(j.emin_degil) ? j.emin_degil.join("; ") : (j.emin_degil || "")
+    }
+  };
+}
+
+// ---------- Ana analiz: önce Gemini, olmazsa yerel ----------
+async function analyze(file, step) {
+  step("Ses çözülüyor...", 10);
+  const key = $("apiKey").value.trim();
+  let result = null;
+  let warn = "";
+
+  if (key) {
+    try {
+      result = await geminiAnalyze(file, key, step);
+    } catch (e) {
+      warn = "Gemini kullanılamadı, yerel analiz yapıldı: " + (e.message || e.name);
+    }
+  }
+
+  const { mono, sr, durationSec } = await decodeMono(file);
+  if (!result) {
+    result = await localAnalyze(mono, sr, durationSec, step);
+  } else {
+    result.durationSec = Math.round(durationSec);
+  }
+  result.warn = warn;
+  return result;
+}
+
+// ---------- Prompt ve rapor ----------
 function effBpm() {
   const m = parseInt($("manualBpm").value, 10);
   if (m >= 40 && m <= 220) return m;
   return selBpm;
 }
 
+function genreOf() {
+  return $("genre").value.trim() || (A.geminiNote && A.geminiNote.tur) || "";
+}
+
 function buildPrompt() {
   const bpm = effBpm();
-  const minor = A.scale === "minör";
-  const genre = $("genre").value.trim() || autoGenre(bpm, minor);
-  const mood = minor ? "melancholic, emotional" : "upbeat, uplifting";
-  const instr = A.brightness === "parlak"
-    ? "electric guitar, drums, synth"
-    : "acoustic guitar, soft piano, strings";
-  const vocal = $("vocal").value;
-  const lang = $("lang").value;
-  const langPart = (vocal === "instrumental" || lang === "none") ? "" :
-    (lang === "Türkçe" ? "Turkish lyrics" : "English lyrics");
+  const parts = [];
+  const g = genreOf();
+  if (g) parts.push(g);
+  parts.push(`${bpm} BPM`);
+  if (A.keyConf !== "düşük") parts.push(`${A.tonic} ${A.scale}`);
+  if (A.geminiNote && A.geminiNote.ruhHali) parts.push(A.geminiNote.ruhHali);
+  if (A.geminiNote && A.geminiNote.enstruman) parts.push(A.geminiNote.enstruman);
+  if (A.geminiNote && A.geminiNote.vokal) parts.push(A.geminiNote.vokal);
+  if (A.geminiNote && A.geminiNote.dil && A.geminiNote.dil !== "yok" && A.geminiNote.vokal !== "enstrümantal") {
+    parts.push(A.geminiNote.dil === "Türkçe" ? "Turkish lyrics" : (A.geminiNote.dil === "İngilizce" ? "English lyrics" : ""));
+  }
   const place = [$("country").value.trim(), $("region").value.trim()].filter(Boolean).join(" ");
+  if (place) parts.push(`${place} folk influence`);
   const year = $("year").value.trim();
-  const era = /^\d{4}$/.test(year) ? year.slice(0, 3) + "0s" : "";
-  const parts = [
-    genre,
-    `${bpm} BPM`,
-    `${A.tonic} ${A.scale}`,
-    mood,
-    instr,
-    vocal === "instrumental" ? "instrumental" : vocal,
-    langPart,
-    place ? `${place} folk influence` : "",
-    era ? `${era} style` : ""
-  ];
+  if (/^\d{4}$/.test(year)) parts.push(`${year.slice(0, 3)}0s style`);
   return parts.filter(Boolean).join(", ");
 }
 
@@ -314,31 +460,38 @@ function buildReport() {
   const place = [$("country").value.trim(), $("region").value.trim()].filter(Boolean).join(" / ");
   const others = A.cands.filter(c => c.bpm !== bpm).map(c => `${c.bpm} BPM`).join(", ");
   const chords = A.chords.map(c => `${c.name} (${fmtTime(c.t)})`).join(" → ");
-  return [
-    "ŞARKI ANALİZİ ULTRA",
+  const src = A.source === "gemini" ? "Gemini" : "yerel analiz";
+  const note = A.geminiNote || {};
+  const lines = [
+    "ŞARKI ANALİZİ",
+    `Analiz kaynağı: ${src}`,
     `Başlık: ${title}`,
     `Yıl: ${$("year").value.trim() || "Girilmedi"}`,
     `Süre: ${fmtTime(A.durationSec)}`,
-    `Tempo: ${bpm} BPM (${manual ? "elle girildi" : "adaylardan seçildi"})`,
+    `Tempo: ${bpm} BPM (${manual ? "elle girildi" : "güven: " + A.tempoConf})`,
     `Diğer tempo adayları: ${others || "yok"}`,
-    `Ton (tahmini): ${A.tonic} ${A.scale}`,
-    `Akor ilerlemesi (tahmini, ilk 2 dk): ${chords || "Belirlenemedi"}`,
+    `Ton (tahmini): ${A.tonic} ${A.scale} (güven: ${A.keyConf})`,
+    `Akorlar (tahmini): ${chords || "Belirlenemedi"}`,
+    `Tür: ${genreOf() || "Girilmedi"}`,
+    `Vokal: ${note.vokal || "Girilmedi"}`,
+    `Dil: ${note.dil || "Girilmedi"}`,
+    `Enstrümanlar: ${note.enstruman || "Girilmedi"}`,
     `Enerji: ${A.energy}`,
-    `Ton rengi: ${A.brightness}`,
     `Ülke/Yöre: ${place || "Girilmedi"}`,
     "",
     "SUNO STİL PROMPT'U",
     $("sunoBox").value,
     "",
     "VARSAYIMLAR VE SINIRLAR",
-    "Tempo, ton, akor, enerji ve enstrüman tahminleri kural tabanlıdır ve yanlış olabilir.",
-    "Tempo yarısı ya da iki katı olabilir; Suno'ya göndermeden önce kulakla kontrol edin.",
-    "Akor analizi yalnızca ilk 2 dakikaya dayanır ve majör/minör üçlülerle sınırlıdır.",
-    "Ülke, yöre ve yıl yalnızca elle girildiyse yazılır; sesten tahmin edilmez."
-  ].join("\n");
+    "Sonuçlar tahmindir ve yanlış olabilir. Tempoyu ve tonu kulakla kontrol edin.",
+    "Yarım ya da çift tempo olasılığı vardır.",
+    note.emin ? `Modelin emin olmadığı konular: ${note.emin}` : "",
+    "Ülke, yöre ve yıl yalnızca elle girildiyse yazılır."
+  ];
+  if (A.warn) lines.push("Uyarı: " + A.warn);
+  return lines.filter(l => l !== "").join("\n");
 }
 
-// ---------- Arayüz ----------
 function render() {
   if (!A) return;
   $("sunoBox").value = buildPrompt();
@@ -350,24 +503,20 @@ function renderTempo() {
   box.innerHTML = "";
   A.cands.forEach(c => {
     const b = document.createElement("button");
-    b.textContent = `${c.bpm} BPM (%${c.pct})`;
+    b.textContent = `${c.bpm} BPM`;
     b.className = (c.bpm === selBpm && !$("manualBpm").value.trim()) ? "sel" : "ghost";
-    b.onclick = () => {
-      selBpm = c.bpm;
-      $("manualBpm").value = "";
-      renderTempo();
-      render();
-    };
+    b.onclick = () => { selBpm = c.bpm; $("manualBpm").value = ""; renderTempo(); render(); };
     box.appendChild(b);
   });
+  $("tempoNote").textContent = `Kaynak: ${A.source === "gemini" ? "Gemini" : "yerel analiz"}, tempo güveni: ${A.tempoConf}`;
   $("tempoCard").hidden = false;
 }
 
 function saveHistory(entry) {
   try {
-    const list = JSON.parse(localStorage.getItem("sunoHist") || "[]");
+    const list = JSON.parse(localStorage.getItem("sunoHistG") || "[]");
     list.unshift(entry);
-    localStorage.setItem("sunoHist", JSON.stringify(list.slice(0, 10)));
+    localStorage.setItem("sunoHistG", JSON.stringify(list.slice(0, 10)));
   } catch {}
   showHistory();
 }
@@ -376,7 +525,7 @@ function showHistory() {
   const box = $("hist");
   box.innerHTML = "";
   let list = [];
-  try { list = JSON.parse(localStorage.getItem("sunoHist") || "[]"); } catch {}
+  try { list = JSON.parse(localStorage.getItem("sunoHistG") || "[]"); } catch {}
   if (!list.length) { box.innerHTML = '<span class="hint">Henüz analiz yok.</span>'; return; }
   list.forEach(item => {
     const b = document.createElement("button");
@@ -393,7 +542,7 @@ function setBusy(on) {
 }
 
 document.querySelectorAll("input, select").forEach(el => {
-  if (el.id === "file") return;
+  if (el.id === "file" || el.id === "apiKey") return;
   el.addEventListener("input", render);
   el.addEventListener("change", render);
 });
@@ -404,57 +553,27 @@ $("go").addEventListener("click", async () => {
   setBusy(true);
   $("resultCard").hidden = true;
   try {
-    $("status").textContent = "Ses çözülüyor...";
-    $("bar").value = 10; await tick();
-    const { mono, sr } = await decodeMono(file);
-
-    $("status").textContent = "Tempo hesaplanıyor...";
-    $("bar").value = 30; await tick();
-    const cands = tempoCandidates(mono, sr);
-
-    $("status").textContent = "Ton ve akorlar çıkarılıyor...";
-    $("bar").value = 55; await tick();
-    const frames = chromaFrames(mono, sr, 120);
-    const sum = new Array(12).fill(0);
-    const keyFrames = frames.filter(f => f.t < 90);
-    keyFrames.forEach(f => { for (let i = 0; i < 12; i++) sum[i] += f.c[i]; });
-    const key = estimateKey(sum);
-    const chords = chordTimeline(frames);
-
-    $("status").textContent = "Enerji hesaplanıyor...";
-    $("bar").value = 85; await tick();
-    const { rms, zcr } = features(mono);
-
+    const result = await analyze(file, (msg, pct) => {
+      $("status").textContent = msg;
+      if (pct) $("bar").value = pct;
+    });
     const baseName = file.name.replace(/\.[^.]+$/, "").replace(/_/g, " ");
-    A = {
-      fileName: baseName,
-      durationSec: Math.round(mono.length / sr),
-      cands,
-      tonic: key.tonic,
-      scale: key.scale,
-      chords,
-      energy: rms > 0.15 ? "yüksek" : "düşük/orta",
-      brightness: zcr > 0.12 ? "parlak" : "koyu"
-    };
-
-    // Varsayılan tempo: 70–160 BPM aralığındaki ilk aday, yoksa en güçlü aday
-    const inRange = cands.filter(c => c.bpm >= 70 && c.bpm <= 160);
-    selBpm = (inRange[0] || cands[0] || { bpm: 100 }).bpm;
-
+    A = { ...result, fileName: baseName };
+    const inRange = A.cands.filter(c => c.bpm >= 70 && c.bpm <= 160);
+    selBpm = (inRange[0] || A.cands[0]).bpm;
     $("manualBpm").value = "";
     renderTempo();
     render();
     $("resultCard").hidden = false;
-    $("status").textContent = "Analiz tamamlandı. Tempoyu kontrol edin.";
+    $("status").textContent = A.warn ? A.warn : "Analiz tamamlandı. Tempoyu ve tonu kulağınızla kontrol edin.";
     $("bar").value = 100;
-
     saveHistory({
       d: new Date().toLocaleString("tr-TR"),
       t: $("title").value.trim() || baseName,
       p: $("sunoBox").value
     });
   } catch (e) {
-    $("status").textContent = "Hata: bu dosya tarayıcıda çözülemedi. (" + (e.message || e.name) + ")";
+    $("status").textContent = "Hata: " + (e.message || e.name);
   } finally {
     setBusy(false);
   }
